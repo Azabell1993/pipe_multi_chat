@@ -9,9 +9,14 @@
 #define SERVER_FIFO "/tmp/addition_fifo_server"
 #define USERS_FILE "users.txt"
 
-// 사용자 정보 파일에 기록
+/**
+ * @brief 사용자 정보를 파일에 저장하는 함수
+ * @param username 사용자 이름
+ * @param password 사용자 비밀번호
+ * @return void
+ */
 void save_user_info(const char *username, const char *password) {
-    FILE *file = fopen(USERS_FILE, "a");
+    FILE *file = fopen(USERS_FILE, "a");  // append 모드로 파일 열기
     if (file == NULL) {
         perror("사용자 정보 파일 열기 실패");
         exit(1);
@@ -20,17 +25,22 @@ void save_user_info(const char *username, const char *password) {
     fclose(file);
 }
 
-// 사용자 정보 확인
+/**
+ * @brief 사용자가 이미 존재하는지 확인하는 함수
+ * @param username 사용자 이름
+ * @return true 사용자 존재함, false 사용자 없음
+ */
 bool check_user_exists(const char *username) {
-    FILE *file = fopen(USERS_FILE, "r");
+    FILE *file = fopen(USERS_FILE, "r");  // 읽기 모드로 파일 열기
     if (file == NULL) {
-        // perror("사용자 정보 파일 열기 실패");
+        // 파일이 없을 때는 false 반환
         return false;
     }
 
     char file_username[100];
     char file_password[100];
 
+    // 파일에서 사용자 이름 탐색
     while (fscanf(file, "%s %s", file_username, file_password) != EOF) {
         if (strcmp(file_username, username) == 0) {
             fclose(file);
@@ -42,23 +52,32 @@ bool check_user_exists(const char *username) {
     return false;
 }
 
-// 중복 로그인 확인 (로그인 중인지 확인)
+/**
+ * @brief 사용자가 이미 로그인 상태인지 확인하는 함수
+ * @param username 사용자 이름
+ * @return true 로그인 상태, false 비로그인 상태
+ */
 bool is_user_logged_in(const char *username) {
     char filename[128];
-    sprintf(filename, ".%s.user", username);
+    sprintf(filename, ".%s.user", username);  // 로그인 여부 확인용 파일명 생성
 
+    // 파일이 존재하면 이미 로그인된 상태
     if (access(filename, F_OK) == 0) {
-        return true;  // .user 파일이 있으면 이미 로그인된 상태
+        return true;
     }
     return false;
 }
 
+/**
+ * @brief 로그인 시 사용자 상태 파일을 생성하는 함수
+ * @param username 사용자 이름
+ * @return void
+ */
 void create_user_file(const char *username) {
-    // .user 파일 생성
     char filename[128];
-    sprintf(filename, ".%s.user", username);
+    sprintf(filename, ".%s.user", username);  // 로그인 상태 파일명 생성
 
-    FILE *file = fopen(filename, "w");
+    FILE *file = fopen(filename, "w");  // 쓰기 모드로 파일 생성
     if (file == NULL) {
         perror("파일 생성 실패");
         exit(1);
@@ -67,10 +86,14 @@ void create_user_file(const char *username) {
     fclose(file);
 }
 
+/**
+ * @brief 로그아웃 시 사용자 상태 파일을 삭제하는 함수
+ * @param username 사용자 이름
+ * @return void
+ */
 void delete_user_file(const char *username) {
-    // .user 파일 삭제
     char filename[128];
-    sprintf(filename, ".%s.user", username);
+    sprintf(filename, ".%s.user", username);  // 삭제할 파일명 생성
 
     if (unlink(filename) == -1) {
         perror("파일 삭제 실패");
@@ -87,6 +110,7 @@ int main(int argc, char *argv[]) {
     char password[100];
     int choice;
 
+    // 잘못된 명령행 인자가 전달된 경우
     if (argc != 2) {
         fprintf(stderr, "사용법: %s <server_ip>\n", argv[0]);
         exit(1);
@@ -109,14 +133,14 @@ int main(int argc, char *argv[]) {
             // 중복 로그인 확인
             if (is_user_logged_in(username)) {
                 printf("이미 로그인 중입니다. 다른 사용자로 시도하세요.\n");
-                continue;  // 다시 로그인 시도
+                continue;
             }
 
             printf("비밀번호를 입력하세요: ");
             fgets(password, sizeof(password), stdin);
             password[strcspn(password, "\n")] = '\0';  // 개행 문자 제거
 
-            // 사용자 정보 확인 (회원가입된 사용자 여부)
+            // 사용자 정보 확인
             if (!check_user_exists(username)) {
                 printf("사용자가 존재하지 않습니다. 회원가입을 먼저 진행하세요.\n");
                 continue;
@@ -129,17 +153,17 @@ int main(int argc, char *argv[]) {
             system("clear");
             printf("회원가입할 이름을 입력하세요: ");
             fgets(username, sizeof(username), stdin);
-            username[strcspn(username, "\n")] = '\0';  // 개행 문자 제거
+            username[strcspn(username, "\n")] = '\0';
 
             // 이미 존재하는 사용자 확인
             if (check_user_exists(username)) {
                 printf("이미 존재하는 사용자입니다. 다른 이름으로 시도하세요.\n");
-                continue;  // 다시 회원가입 시도
+                continue;
             }
 
             printf("비밀번호를 입력하세요: ");
             fgets(password, sizeof(password), stdin);
-            password[strcspn(password, "\n")] = '\0';  // 개행 문자 제거
+            password[strcspn(password, "\n")] = '\0';
 
             // 사용자 정보를 텍스트 파일에 저장
             save_user_info(username, password);
@@ -162,7 +186,7 @@ int main(int argc, char *argv[]) {
 
     // 서버로 새 클라이언트 정보 전송
     char new_client_msg[128];
-    sprintf(new_client_msg, "new %s %s", username, my_fifo_name);  // 이름과 FIFO 경로 전송
+    sprintf(new_client_msg, "new %s %s", username, my_fifo_name);  // 클라이언트 이름과 FIFO 경로 전송
     
     if ((fd_server = open(SERVER_FIFO, O_WRONLY)) == -1) {
         perror("open server fifo");
@@ -190,8 +214,9 @@ int main(int argc, char *argv[]) {
                 exit(1);
             }
 
-            memset(received_msg, '\0', sizeof(received_msg));
+            memset(received_msg, '\0', sizeof(received_msg));  // 수신 버퍼 초기화
 
+            // 서버로부터 메시지 수신
             if (read(fd, received_msg, sizeof(received_msg)) > 0) {
                 printf("[상대방 ID] %s\n", received_msg);
             }
