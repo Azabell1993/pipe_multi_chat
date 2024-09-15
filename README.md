@@ -167,9 +167,13 @@ exit 0
 - 서버용 FIFO 경로
 client.c와 server.c 코드에서 SERVER_FIFO 경로가 /tmp/addition_fifo_server로 지정되어 있습니다. 이 경로는 현재 /tmp 디렉토리에 FIFO 파일을 생성하여 사용하지만, 시스템 환경에 따라 /tmp 외의 다른 디렉토리로 설정해야 할 수 있습니다.
 
+- 프로젝트 경로
+> SERVER_PATH="/home/pi/Desktop/veda/workspace/save"
+위의 'SERVER_PATH'를 본인의 경로에 맞게 수정을 하셔야합니다.
+
 - 수정 방법
 > #define SERVER_FIFO "/tmp/addition_fifo_server"
-위 경로를 프로젝트 경로에 맞게 수정하세요.
+위 경로를 프로젝트 경로에 맞게 수정을 하셔야합니다.
 
 - 클라이언트용 FIFO 경로
 클라이언트에서 생성하는 FIFO 경로는 /tmp 디렉토리에 위치하고 있으며, 클라이언트가 자신의 PID를 포함한 이름으로 FIFO를 만듭니다. 이 경로 역시 /tmp 대신 다른 디렉토리로 변경할 수 있습니다.
