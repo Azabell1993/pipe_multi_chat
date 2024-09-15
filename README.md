@@ -48,6 +48,8 @@
 ### 5. Makefile 및 Script 설명
 **[Makefile for Chat Server and Client]**
 ```
+# Makefile for Chat Server and Client
+
 CC = gcc
 LDFLAGS = -pthread
 TARGET_SERVER = chat_server
@@ -58,14 +60,14 @@ SRCS_CLIENT = client.c
 OBJS_SERVER = $(SRCS_SERVER:.c=.o)
 OBJS_CLIENT = $(SRCS_CLIENT:.c=.o)
 
-CFLAGS += -Wno-unused-variable -Wno-unused-function -Wno-implicit-function-declaration -pthread -Ilib/include
+CFLAGS += -Wno-unused-variable -Wno-unused-function -Wno-implicit-function-declaration -pthread
 
 # Default rule
 all: $(TARGET_SERVER) $(TARGET_CLIENT)
 
 # Server build
 $(TARGET_SERVER): $(OBJS_SERVER)
-	$(CC) $(CFLAGS) -o $(TARGET_SERVER) $(OBJS_SERVER) $(LDFLAGS)
+	$(CC) $(CFLAGS) -o $(TARGET_SERVER) $(OBJS_SERVER) $(LDFLAGS)./
 
 # Client build
 $(TARGET_CLIENT): $(OBJS_CLIENT)
@@ -85,15 +87,20 @@ run_server:
 
 # Run client
 run_client:
-	./$(TARGET_CLIENT)
+	./$(TARGET_CLIENT) 127.0.0.1
 
-.PHONY: all clean run_server run_client
+# Start the daemon server
+start_daemon:
+	./daemon_start.sh
+
+.PHONY: all clean
+```
 CC: 사용될 컴파일러는 gcc.
 CFLAGS: 경고 무시 옵션을 포함한 컴파일 플래그, -pthread를 통해 스레드 관련 기능 활성화.
 LDFLAGS: 스레드 라이브러리를 링크하는 플래그.
 all: 서버와 클라이언트를 각각 컴파일하여 실행 파일(chat_server, chat_client)을 생성.
 clean: 중간 파일 및 실행 파일을 삭제.
-```
+
 
 **[daemon_start.sh]**
 ```
@@ -149,6 +156,74 @@ case "$1" in
 esac
 exit 0
 ```
+
+### 프로젝트 설정 및 경로 변경 안내
+이 프로젝트는 다중 사용자 채팅 서버와 클라이언트 프로그램으로, 서버는 데몬화되어 실행되고 클라이언트는 서버에 연결되어 메시지를 주고받습니다. 프로젝트를 실행하기 위해서는 특정 파일 경로를 바꿔야 할 수 있습니다. 아래는 해당 경로와 변경이 필요한 부분에 대한 설명입니다.
+
+#### 1. 경로 변경 필요 사항
+이 프로젝트는 FIFO(이름 있는 파이프)를 사용하여 클라이언트와 서버 간의 통신을 처리합니다. 프로젝트를 다른 환경에 맞게 설정하기 위해서는 특정 경로를 환경에 맞게 변경해야 합니다.
+
+##### 변경해야 할 파일 및 경로
+- 서버용 FIFO 경로
+client.c와 server.c 코드에서 SERVER_FIFO 경로가 /tmp/addition_fifo_server로 지정되어 있습니다. 이 경로는 현재 /tmp 디렉토리에 FIFO 파일을 생성하여 사용하지만, 시스템 환경에 따라 /tmp 외의 다른 디렉토리로 설정해야 할 수 있습니다.
+
+- 수정 방법
+> #define SERVER_FIFO "/tmp/addition_fifo_server"
+위 경로를 프로젝트 경로에 맞게 수정하세요.
+
+- 클라이언트용 FIFO 경로
+클라이언트에서 생성하는 FIFO 경로는 /tmp 디렉토리에 위치하고 있으며, 클라이언트가 자신의 PID를 포함한 이름으로 FIFO를 만듭니다. 이 경로 역시 /tmp 대신 다른 디렉토리로 변경할 수 있습니다.
+
+- 수정 방법
+> sprintf(my_fifo_name, "/tmp/add_client_fifo%ld", (long)getpid());
+위 경로를 시스템 환경에 맞게 수정하세요.
+
+#### 2. 프로젝트 디렉토리 구조
+프로젝트의 기본 디렉토리 구조는 아래를 참조하시면 됩니다.
+> azabell@azabellui-MacBookPro:~/Desktop/pipe_multi_chat$ tre
+```
+.
+├── Makefile
+├── README.md
+├── client.c
+├── daemon_start.sh
+├── server.c
+└── users.txt
+
+1 directory, 6 files
+```
+- Makefile: 서버와 클라이언트를 빌드하고 실행하기 위한 파일.
+- README.md: 프로젝트 설명 파일.
+- client.c: 클라이언트 소스 코드.
+- daemon_start.sh: 서버를 데몬으로 실행하는 스크립트.
+- server.c: 서버 소스 코드.
+- users.txt: 사용자 정보가 저장되는 파일.
+
+#### 3. 빌드 및 실행
+
+프로젝트를 빌드하고 실행하는 방법은 아래의 내용을 따르시면 됩니다.
+
+빌드: 서버와 클라이언트를 컴파일합니다.
+> make
+> 
+서버 실행: 서버를 데몬으로 실행합니다.
+```
+make start_daemon
+```
+
+클라이언트 실행: 클라이언트를 실행하여 서버에 연결합니다.
+```
+make run_client
+```
+
+클린: 생성된 바이너리 파일과 오브젝트 파일을 삭제합니다.
+```
+make clean
+```
+
+#### 4. 추가 참고 사항
+users.txt 파일은 사용자 정보가 저장되는 중요한 파일입니다. 클린 명령어(make clean)를 실행해도 삭제되지 않도록 설정되어 있습니다.
+클라이언트 실행 시 기본적으로 127.0.0.1에 연결됩니다. 다른 IP 주소로 서버에 연결하고 싶다면 ./client <server_ip> 형식으로 실행하십시오.
 
 ### 사용방법
 > ./daemon_start [ start | stop  | restart | status ]
